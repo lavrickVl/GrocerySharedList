@@ -1,15 +1,11 @@
 package com.mitm.android.grocerysharedlist.presentation.ui.items_list
 
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -19,23 +15,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.mitm.android.grocerysharedlist.Counter
 import com.mitm.android.grocerysharedlist.ItemItem
-import com.mitm.android.grocerysharedlist.core.Constants
+import com.mitm.android.grocerysharedlist.R
 import com.mitm.android.grocerysharedlist.model.Item
-import java.util.*
+import com.mitm.android.grocerysharedlist.presentation.Screen
+import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InsertItemField
+import kotlin.random.Random.Default.nextInt
 
 @ExperimentalMaterialApi
 @Composable
 fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel = hiltViewModel()) {
 
-//    val state = viewModel.state.value
+    val state = viewModel.state.value
     val scaffoldState = rememberScaffoldState()
     val scope = rememberCoroutineScope()
+
+    val inputItem = state.inputItem
 
     Scaffold(
         bottomBar = {
@@ -45,10 +46,9 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                     CornerSize(percent = 50)
                 )
             ) {
-
                 IconButton(
                     onClick = {
-
+                        viewModel.onEvent(ListEvent.UpdateListInRoom)
                     },
                     modifier = Modifier.weight(1f, false)
                 ) {
@@ -65,7 +65,44 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                         .background(Color.Black),
                     contentAlignment = Alignment.Center
                 ) {
-                    Counter()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            onClick = {
+                                viewModel.counterMinus()
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_baseline_remove_24),
+                                contentDescription = "remove"
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .background(Color.Red),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = state.counter.toString())
+                        }
+
+
+                        IconButton(
+                            onClick = {
+                                viewModel.counterPlus()
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "add"
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f, false))
@@ -74,7 +111,12 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {  // Create a new user with a first, middle, and last name
+                onClick = {
+                    viewModel.onEvent(ListEvent.InsertItem)
+
+//                    navController.navigate(
+//                        Screen.RoomSettingsScreen.route
+//                    )
                 },
             ) {
                 Icon(
@@ -86,35 +128,53 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
         },
         isFloatingActionButtonDocked = true,
     ) {
-        LazyColumn(
-            modifier = Modifier.clickable {
-                val sha = Date().hashCode()
 
-                Log.d(Constants.TAG, "onCreate: $sha")
-            }
-        ) {
-            itemsIndexed(items = listOf("123", "321","31","21")) { index, item ->
+        Column() {
+            InsertItemField(
+                text = inputItem,
+                onValueChange = {
+                    viewModel.onEvent(ListEvent.EditInput(it))
+                },
+                onFocusChange = {
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.h5
+            )
 
-                val state = rememberDismissState(
-                    confirmStateChange = {
-                        if (it == DismissValue.DismissedToStart
-                            || it == DismissValue.DismissedToEnd
-                        ) {
-//                            getData.removeAt(index)
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(18.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.clickable {
+                    viewModel.onEvent(ListEvent.DeleteAllItems)
+                }
+            ) {
+                itemsIndexed(items = state.list) { index, item ->
+
+                    val dismissState = rememberDismissState(
+                        confirmStateChange = {
+                            if (it == DismissValue.DismissedToStart
+                                || it == DismissValue.DismissedToEnd
+                            ) {
+                                viewModel.onEvent(ListEvent.DeleteItem(item))
+                            }
+                            true
                         }
-                        true
-                    }
-                )
-
-                SwipeToDismiss(
-                    state = state,
-                    background = {},
-                    dismissContent = { ItemItem(item = Item(1, item) ) },
-                    directions = setOf(
-                        DismissDirection.StartToEnd,
-                        DismissDirection.EndToStart
                     )
-                )
+
+                    SwipeToDismiss(
+                        state = dismissState,
+                        background = {},
+                        dismissContent = { ItemItem(item = item) },
+                        directions = setOf(
+                            DismissDirection.StartToEnd,
+                            DismissDirection.EndToStart
+                        )
+                    )
+                }
             }
         }
     }

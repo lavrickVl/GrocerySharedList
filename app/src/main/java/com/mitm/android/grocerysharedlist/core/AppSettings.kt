@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class AppSettings @Inject constructor(private val context: Context) {
 
-    private var roomId: String? = null
+    private var roomId: String? = "FirstList"//null
 
     fun readOwnRoom() = roomId
     fun writeOwnRoom(_roomId: String?){

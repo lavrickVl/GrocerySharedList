@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.ItemsListScreen
+import com.mitm.android.grocerysharedlist.presentation.ui.room_settings.RoomSettingsScreen
 
 @ExperimentalMaterialApi
 @Composable
@@ -18,7 +19,7 @@ fun Navigation(){
         }
 
         composable(Screen.RoomSettingsScreen.route){
-
+            RoomSettingsScreen(navController)
         }
     }
 }

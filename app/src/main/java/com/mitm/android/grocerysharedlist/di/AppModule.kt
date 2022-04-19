@@ -5,7 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.mitm.android.grocerysharedlist.core.AppSettings
-import com.mitm.android.grocerysharedlist.repository.RepositoryGrocery
+import com.mitm.android.grocerysharedlist.domain.repository.RepositoryGrocery
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
