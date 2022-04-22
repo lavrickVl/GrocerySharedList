@@ -8,12 +8,15 @@ import androidx.lifecycle.viewModelScope
 import com.mitm.android.grocerysharedlist.core.Constants.TAG
 import com.mitm.android.grocerysharedlist.domain.repository.RepositoryGrocery
 import com.mitm.android.grocerysharedlist.model.Item
+import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InputItemState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@ExperimentalCoroutinesApi
 @HiltViewModel
 class ItemsListViewModel @Inject constructor(
     private val repository: RepositoryGrocery
@@ -23,6 +26,10 @@ class ItemsListViewModel @Inject constructor(
     private val _state = mutableStateOf<ListStates>(ListStates())
     val state: State<ListStates> = _state
 
+    private val _itemContent = mutableStateOf(InputItemState(
+        hint = "Enter some item"
+    ))
+    val itemContent: State<InputItemState> = _itemContent
 
     init {
         subscribeToRealtimeUpdates()
@@ -40,12 +47,6 @@ class ItemsListViewModel @Inject constructor(
         )
     }
 
-    fun counterReset(){
-        _state.value = state.value.copy(
-            counter = 0
-        )
-    }
-
     fun onEvent(event: ListEvent){
         when (event){
             is ListEvent.EditInput -> {
@@ -56,31 +57,42 @@ class ItemsListViewModel @Inject constructor(
 
             is ListEvent.InsertItem -> {
                 val insertList = _state.value.list.toMutableList()
-                insertList.add(Item(_state.value.counter, _state.value.inputItem))
+                val item = Item(_state.value.counter, _state.value.inputItem)
+                insertList.add(0,item)
                 repository.insertItem(insertList)
+
+                _state.value = state.value.copy(
+                    inputItem = "",
+                    counter = 1
+                )
             }
+
+            is ListEvent.ChangeContentFocus -> {
+                _itemContent.value = _itemContent.value.copy(
+                    isHintVisible = !event.focusState.isFocused &&
+                            _itemContent.value.text.isBlank()
+                )
+            }
+
 
             is ListEvent.UpdateListInRoom -> {
                 _state.value = state.value.copy(
                     loading = !state.value.loading
                 )
-
-                getItemsList()
             }
 
             is ListEvent.DeleteAllItems -> {
-                _state.value = state.value.copy(
-                    list = emptyList()
-                )
+                repository.clearList()
             }
 
             is ListEvent.DeleteItem -> {
                 val list = _state.value.list.toMutableList()
                 list.remove(event.item)
-                Log.d(TAG, "onEvent temp list: $list")
-                _state.value = state.value.copy(
-                    list = list
-                )
+//                _state.value = state.value.copy(
+//                    list = list
+//                )
+
+                repository.removeItem(list)
             }
         }
     }
@@ -99,11 +111,12 @@ class ItemsListViewModel @Inject constructor(
         }
     }
 
+    @ExperimentalCoroutinesApi
     private fun subscribeToRealtimeUpdates(){
         viewModelScope.launch(Dispatchers.IO) {
             repository.subscribeToRealtimeUpdates().collect {
                 _state.value = state.value.copy(
-                    list = it
+                    list = it.distinct()
                 )
 
                 Log.d(TAG, "subscribeToRealtimeUpdates: $it")

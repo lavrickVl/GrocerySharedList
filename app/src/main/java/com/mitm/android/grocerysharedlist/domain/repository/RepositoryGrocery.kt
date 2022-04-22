@@ -11,6 +11,7 @@ import com.mitm.android.grocerysharedlist.core.Constants.TAG
 import com.mitm.android.grocerysharedlist.model.Item
 import com.mitm.android.grocerysharedlist.model.remote.ListFirestore
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
@@ -24,11 +25,11 @@ class RepositoryGrocery @Inject constructor(
 ) {
     private val path = remoteDB
         .collection(ROOT)
-        .document(appSettings.readOwnRoom()!!)
+        .document(appSettings.retrieveRoomID()!!)
 
     fun getItemsList(): Flow<List<Item>> = flow {
 
-        if (appSettings.readOwnRoom() == null) {
+        if (appSettings.retrieveRoomID() == null) {
             return@flow emit(emptyList<Item>())
         }
 
@@ -49,6 +50,7 @@ class RepositoryGrocery @Inject constructor(
     }
 
 
+    @ExperimentalCoroutinesApi
     fun subscribeToRealtimeUpdates(): Flow<List<Item>> = callbackFlow {
         val callback = path.addSnapshotListener { value, error ->
             error?.let {
@@ -64,11 +66,14 @@ class RepositoryGrocery @Inject constructor(
     }
 
 
-    fun getRoom() = appSettings.readOwnRoom()
+
+    fun getRoom() = appSettings.retrieveRoomID()
 
     fun setRoom(): Flow<List<Item>> = flow {
 
-        appSettings.readOwnRoom()
+
+
+        appSettings.retrieveRoomID()
     }
 
     fun insertItem(itemList: List<Item>) {
@@ -81,6 +86,24 @@ class RepositoryGrocery @Inject constructor(
             }
     }
 
-    fun removeItem() {}
+    fun removeItem(itemList: List<Item>) {
+        path.set(ListFirestore(list = itemList))
+            .addOnSuccessListener {
+                Log.d(TAG, "removeItem: $itemList")
+            }
+            .addOnFailureListener {
+                Log.d(TAG, "removeItem failure: $itemList")
+            }
+    }
+
+    fun clearList() {
+        path.set(ListFirestore(list = emptyList()))
+            .addOnSuccessListener {
+                Log.d(TAG, "clearList emptyList")
+            }
+            .addOnFailureListener {
+                Log.d(TAG, "clearList emptyList failure")
+            }
+    }
 
 }

@@ -1,7 +1,8 @@
-package com.mitm.android.grocerysharedlist
+package com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.DismissValue
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -10,15 +11,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mitm.android.grocerysharedlist.model.Item
 
 @Composable
 fun ItemItem(
-    item: Item
+    item: Item,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(12.dp)
             .background(Color.LightGray),
@@ -34,7 +37,7 @@ fun ItemItem(
                 .weight(1f)
                 .padding(8.dp),
             textAlign = TextAlign.Center,
-            )
+        )
 
         Text(
             text = item.name,

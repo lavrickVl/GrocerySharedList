@@ -70,6 +70,9 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
+    //DataStorePref
+    implementation "androidx.datastore:datastore-preferences:1.0.0"
+
     //VModel
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1"
     implementation "androidx.activity:activity-ktx:1.4.0"
@@ -82,5 +85,8 @@ dependencies {
 
     def nav_version = "2.4.2"
     implementation "androidx.navigation:navigation-compose:$nav_version"
+
+    //Anim Lazy
+    implementation "androidx.compose.foundation:foundation:1.2.0-alpha08"
 
 }
