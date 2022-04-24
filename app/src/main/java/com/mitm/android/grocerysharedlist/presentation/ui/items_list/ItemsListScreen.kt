@@ -1,14 +1,10 @@
 package com.mitm.android.grocerysharedlist.presentation.ui.items_list
 
 import android.annotation.SuppressLint
-import android.util.Log
 import android.widget.Toast
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.Text
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,11 +12,8 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -30,12 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.ItemItem
 import com.mitm.android.grocerysharedlist.R
-import com.mitm.android.grocerysharedlist.core.Constants.TAG
-import com.mitm.android.grocerysharedlist.presentation.MainActivity
+import com.mitm.android.grocerysharedlist.core.Constants.PREF_ROOM_KEY
+import com.mitm.android.grocerysharedlist.core.Constants.ROOM_KEY
+import com.mitm.android.grocerysharedlist.presentation.Screen
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InsertItemField
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -56,7 +51,30 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
     val inputItem = state.inputItem
 
+    val roomIsChanged = navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>(ROOM_KEY)
+    if (roomIsChanged == true) {
+        navController.currentBackStackEntry?.savedStateHandle?.set(ROOM_KEY, false)
+        Toast.makeText(navController.context, "" + roomIsChanged, Toast.LENGTH_SHORT).show()
+
+        viewModel.onEvent(ListEvent.UpdateRoom)
+    }
+
     Scaffold(
+        topBar = {
+            TopAppBar {
+                Spacer(Modifier.width(8.dp))
+                Text(state.roomID, fontSize = 22.sp)
+                Spacer(Modifier.weight(1f, true))
+                IconButton(onClick = {
+                    navController.navigate(Screen.RoomSettingsScreen.route)
+                }) {
+                    Icon(
+                        Icons.Filled.Settings,
+                        contentDescription = "settings"
+                    )
+                }
+            }
+        },
         bottomBar = {
             BottomAppBar(
                 // Defaults to null, that is, No cutout
@@ -186,11 +204,13 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 //                    ) {}
                     .padding(bottom = it.calculateBottomPadding()),
             ) {
-                item { Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(18.dp)
-                ) }
+                item {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(18.dp)
+                    )
+                }
 
 
                 itemsIndexed(

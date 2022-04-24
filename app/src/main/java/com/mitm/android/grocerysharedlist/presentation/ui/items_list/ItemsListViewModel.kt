@@ -5,6 +5,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mitm.android.grocerysharedlist.core.AppSettings
 import com.mitm.android.grocerysharedlist.core.Constants.TAG
 import com.mitm.android.grocerysharedlist.domain.repository.RepositoryGrocery
 import com.mitm.android.grocerysharedlist.model.Item
@@ -12,6 +13,7 @@ import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,9 +21,9 @@ import javax.inject.Inject
 @ExperimentalCoroutinesApi
 @HiltViewModel
 class ItemsListViewModel @Inject constructor(
-    private val repository: RepositoryGrocery
+    private val repository: RepositoryGrocery,
+    private val appSettings: AppSettings
 ): ViewModel() {
-
 
     private val _state = mutableStateOf<ListStates>(ListStates())
     val state: State<ListStates> = _state
@@ -30,6 +32,8 @@ class ItemsListViewModel @Inject constructor(
         hint = "Enter some item"
     ))
     val itemContent: State<InputItemState> = _itemContent
+
+    private var jobSubscriber: Job? = null
 
     init {
         subscribeToRealtimeUpdates()
@@ -81,6 +85,15 @@ class ItemsListViewModel @Inject constructor(
                 )
             }
 
+            is ListEvent.UpdateRoom -> {
+                jobSubscriber?.cancel()
+                subscribeToRealtimeUpdates()
+
+//                _state.value = state.value.copy(
+//                    loading = !state.value.loading
+//                )
+            }
+
             is ListEvent.DeleteAllItems -> {
                 repository.clearList()
             }
@@ -91,7 +104,6 @@ class ItemsListViewModel @Inject constructor(
 //                _state.value = state.value.copy(
 //                    list = list
 //                )
-
                 repository.removeItem(list)
             }
         }
@@ -99,24 +111,15 @@ class ItemsListViewModel @Inject constructor(
 
 
 
-    private fun getItemsList(){
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.getItemsList().collect {
-                _state.value = state.value.copy(
-                    list = it
-                )
 
-                Log.d(TAG, "getItemsList: $it")
-            }
-        }
-    }
 
     @ExperimentalCoroutinesApi
     private fun subscribeToRealtimeUpdates(){
-        viewModelScope.launch(Dispatchers.IO) {
+        jobSubscriber = viewModelScope.launch(Dispatchers.IO) {
             repository.subscribeToRealtimeUpdates().collect {
                 _state.value = state.value.copy(
-                    list = it.distinct()
+                    list = it.distinct(),
+                    roomID = appSettings.getRoomID() ?: "RoomID is empty"
                 )
 
                 Log.d(TAG, "subscribeToRealtimeUpdates: $it")

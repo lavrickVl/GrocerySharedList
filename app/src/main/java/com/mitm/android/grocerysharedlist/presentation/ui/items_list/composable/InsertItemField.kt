@@ -34,8 +34,6 @@ fun InsertItemField(
     Box(
         modifier = modifier
     ) {
-
-
         OutlinedTextField(
             value = text,
             onValueChange = onValueChange,

@@ -4,6 +4,7 @@ import com.mitm.android.grocerysharedlist.model.Item
 
 data class ListStates(
     val list: List<Item> = emptyList(),
+    val roomID: String = "ID:",
     val inputItem: String = "",
     val counter: Int = 0,
     val loading: Boolean = false

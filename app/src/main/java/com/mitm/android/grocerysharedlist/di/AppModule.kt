@@ -31,7 +31,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGroceryRepository(dbRemote: FirebaseFirestore, appSettings: AppSettings): RepositoryGrocery {
-        return RepositoryGrocery(dbRemote, appSettings)
+    fun provideGroceryRepository(
+        dbRemote: FirebaseFirestore,
+        appSettings: AppSettings,
+        @ApplicationContext context: Context
+    ): RepositoryGrocery {
+        return RepositoryGrocery(dbRemote, appSettings, context)
     }
 }
