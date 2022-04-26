@@ -51,7 +51,8 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
     val inputItem = state.inputItem
 
-    val roomIsChanged = navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>(ROOM_KEY)
+    val roomIsChanged =
+        navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>(ROOM_KEY)
     if (roomIsChanged == true) {
         navController.currentBackStackEntry?.savedStateHandle?.set(ROOM_KEY, false)
         Toast.makeText(navController.context, "" + roomIsChanged, Toast.LENGTH_SHORT).show()
