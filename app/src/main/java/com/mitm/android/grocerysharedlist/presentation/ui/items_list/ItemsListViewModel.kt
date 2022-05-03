@@ -33,6 +33,8 @@ class ItemsListViewModel @Inject constructor(
     ))
     val itemContent: State<InputItemState> = _itemContent
 
+    private var cacheList: List<Item> = emptyList()
+
     private var jobSubscriber: Job? = null
 
     init {
@@ -63,7 +65,7 @@ class ItemsListViewModel @Inject constructor(
                 val insertList = _state.value.list.toMutableList()
                 val item = Item(_state.value.counter, _state.value.inputItem)
                 insertList.add(0,item)
-                repository.insertItem(insertList)
+                if (insertList.size < 100) repository.insertItem(insertList)
 
                 _state.value = state.value.copy(
                     inputItem = "",
@@ -88,22 +90,21 @@ class ItemsListViewModel @Inject constructor(
             is ListEvent.UpdateRoom -> {
                 jobSubscriber?.cancel()
                 subscribeToRealtimeUpdates()
-
-//                _state.value = state.value.copy(
-//                    loading = !state.value.loading
-//                )
             }
 
             is ListEvent.DeleteAllItems -> {
+                cacheList = state.value.list
                 repository.clearList()
+            }
+
+            is ListEvent.RestoreList -> {
+                repository.insertItem(cacheList)
             }
 
             is ListEvent.DeleteItem -> {
                 val list = _state.value.list.toMutableList()
                 list.remove(event.item)
-//                _state.value = state.value.copy(
-//                    list = list
-//                )
+
                 repository.removeItem(list)
             }
         }

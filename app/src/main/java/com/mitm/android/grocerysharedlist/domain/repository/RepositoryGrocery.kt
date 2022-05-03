@@ -67,7 +67,6 @@ class RepositoryGrocery @Inject constructor(
 
         job?.start()
 
-
         appSettings.updateRoomID(roomId)
         path = remoteDB.collection(ROOT)
             .document(roomId)

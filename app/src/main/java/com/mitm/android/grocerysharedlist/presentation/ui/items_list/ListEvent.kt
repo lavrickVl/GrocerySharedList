@@ -5,6 +5,7 @@ import com.mitm.android.grocerysharedlist.model.Item
 
 sealed class ListEvent{
     object UpdateListInRoom: ListEvent() //val roomID: String
+    object RestoreList: ListEvent() //undo
     object UpdateRoom: ListEvent() //val roomID: String
     data class EditInput(val inputText: String): ListEvent()
     data class ChangeContentFocus(val focusState: FocusState): ListEvent()

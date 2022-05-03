@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.Text
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,16 +20,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.ItemItem
 import com.mitm.android.grocerysharedlist.R
-import com.mitm.android.grocerysharedlist.core.Constants.PREF_ROOM_KEY
 import com.mitm.android.grocerysharedlist.core.Constants.ROOM_KEY
 import com.mitm.android.grocerysharedlist.presentation.Screen
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InsertItemField
@@ -48,6 +56,8 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
     val scope = rememberCoroutineScope()
     lateinit var listState: LazyListState
 
+    val msg = stringResource(R.string.clear_list_msg)
+    val label = stringResource(R.string.undo)
 
     val inputItem = state.inputItem
 
@@ -61,6 +71,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
     }
 
     Scaffold(
+        scaffoldState = scaffoldState,
         topBar = {
             TopAppBar {
                 Spacer(Modifier.width(8.dp))
@@ -86,6 +97,16 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                 IconButton(
                     onClick = {
                         viewModel.onEvent(ListEvent.DeleteAllItems)
+
+                        scope.launch {
+                            val result = scaffoldState.snackbarHostState.showSnackbar(
+                                message = msg,
+                                actionLabel = label
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.onEvent(ListEvent.RestoreList)
+                            }
+                        }
                     },
                     modifier = Modifier.weight(1f, false)
                 ) {
@@ -98,8 +119,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                 Box(
                     modifier = Modifier
                         .weight(5f)
-                        .fillMaxWidth()
-                        .background(Color.Black),
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -122,7 +142,26 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(CircleShape)
-                                .background(Color.Red),
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colors.primary,
+                                            MaterialTheme.colors.secondary,
+//                                            Color(android.graphics.Color.parseColor("#5614B0")),
+//                                            Color(android.graphics.Color.parseColor("#DBD65C"))
+                                        )
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .border(
+                                    2.dp, brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            MaterialTheme.colors.primary,
+                                            MaterialTheme.colors.primaryVariant
+                                        )
+                                    ),
+                                    shape = CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(text = state.counter.toString())
@@ -173,10 +212,11 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
         Column() {
             InsertItemField(
-                modifier = Modifier.padding(start = 12.dp, top = 12.dp, end = 12.dp),
+                modifier = Modifier
+                    .padding(start = 8.dp, top = 12.dp, end = 8.dp),
                 text = inputItem,
                 onValueChange = {
-                    viewModel.onEvent(ListEvent.EditInput(it))
+                    if (it.length < 100) viewModel.onEvent(ListEvent.EditInput(it))
                 },
                 onFocusChange = {
                     viewModel.onEvent(ListEvent.ChangeContentFocus(it))
@@ -185,7 +225,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                 textStyle = MaterialTheme.typography.h5,
                 isHintVisible = viewModel.itemContent.value.isHintVisible,
                 keyboardActions = KeyboardActions(
-                    onGo = {
+                    onDone = {
                         viewModel.onEvent(ListEvent.InsertItem)
                         keyboardController?.hide()
 
@@ -199,11 +239,13 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
             LazyColumn(
                 state = listState,
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f)
+//                    .padding(bottom = 8.dp)
 //                    .clickable(
 //                        indication = null,
 //                        interactionSource = remember { MutableInteractionSource() }
 //                    ) {}
-                    .padding(bottom = it.calculateBottomPadding()),
             ) {
                 item {
                     Spacer(
@@ -212,7 +254,6 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                             .height(18.dp)
                     )
                 }
-
 
                 itemsIndexed(
                     items = state.list,
@@ -226,11 +267,11 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                             if (it == DismissValue.DismissedToStart
 //                                || it == DismissValue.DismissedToEnd
                             ) {
-                                Toast.makeText(
-                                    navController.context,
-                                    "indexOf: $index",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+//                                Toast.makeText(
+//                                    navController.context,
+//                                    "indexOf: $index",
+//                                    Toast.LENGTH_SHORT
+//                                ).show()
                                 viewModel.onEvent(ListEvent.DeleteItem(item))
                             }
                             true
@@ -239,6 +280,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
                     SwipeToDismiss(
                         state = dismissState,
+                        dismissThresholds = { FractionalThreshold(0.8f) },
                         modifier = Modifier.animateItemPlacement(),
                         background = {
                             val color = when (dismissState.dismissDirection) {
@@ -249,7 +291,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .fillParentMaxSize()
                                     .background(color)
                                     .padding(12.dp)
                             ) {
@@ -264,6 +306,8 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                         dismissContent = {
                             ItemItem(
                                 item = item,
+                                modifier = Modifier
+                                    .padding(4.dp)
                             )
                         },
                         directions = setOf(
@@ -273,6 +317,48 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                     )
                 }
             }
+
+
+            Spacer(
+                modifier = Modifier
+                    .background(Color.Gray)
+                    .fillMaxWidth()
+                    .height(1.dp)
+            )
+
+
+            AdvertView(
+                modifier = Modifier
+                    .padding(bottom = it.calculateBottomPadding())
+                    .fillMaxSize()
+            )
         }
+    }
+}
+
+@Composable
+fun AdvertView(modifier: Modifier = Modifier) {
+    val isInEditMode = LocalInspectionMode.current
+    if (isInEditMode) {
+        Text(
+            modifier = modifier
+                .fillMaxWidth()
+                .background(Color.Red)
+                .padding(horizontal = 2.dp, vertical = 6.dp),
+            textAlign = TextAlign.Center,
+            color = Color.White,
+            text = "Advert Here",
+        )
+    } else {
+        AndroidView(
+            modifier = modifier.fillMaxWidth(),
+            factory = { context ->
+                AdView(context).apply {
+                    adSize = AdSize.BANNER
+                    adUnitId = context.getString(R.string.ad_id_banner)
+                    loadAd(AdRequest.Builder().build())
+                }
+            }
+        )
     }
 }
