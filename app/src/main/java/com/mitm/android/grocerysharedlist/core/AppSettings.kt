@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
 
-private val Context.dataStore by preferencesDataStore("settings")
 
 class AppSettings @Inject constructor(private val context: Context) {
 

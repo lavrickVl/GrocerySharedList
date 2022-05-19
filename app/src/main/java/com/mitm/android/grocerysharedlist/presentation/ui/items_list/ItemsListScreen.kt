@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.Text
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +40,7 @@ import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.
 import com.mitm.android.grocerysharedlist.R
 import com.mitm.android.grocerysharedlist.core.Constants.ROOM_KEY
 import com.mitm.android.grocerysharedlist.presentation.Screen
+import com.mitm.android.grocerysharedlist.presentation.theme.Purple200
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InsertItemField
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -65,8 +67,6 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
         navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>(ROOM_KEY)
     if (roomIsChanged == true) {
         navController.currentBackStackEntry?.savedStateHandle?.set(ROOM_KEY, false)
-        Toast.makeText(navController.context, "" + roomIsChanged, Toast.LENGTH_SHORT).show()
-
         viewModel.onEvent(ListEvent.UpdateRoom)
     }
 
@@ -96,9 +96,12 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
             ) {
                 IconButton(
                     onClick = {
+                        if (state.list.isEmpty()) return@IconButton
+
                         viewModel.onEvent(ListEvent.DeleteAllItems)
 
                         scope.launch {
+                            scaffoldState.snackbarHostState.currentSnackbarData?.dismiss()
                             val result = scaffoldState.snackbarHostState.showSnackbar(
                                 message = msg,
                                 actionLabel = label
@@ -118,7 +121,7 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
 
                 Box(
                     modifier = Modifier
-                        .weight(5f)
+                        .weight(6f)
                         .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
@@ -144,12 +147,22 @@ fun ItemsListScreen(navController: NavController, viewModel: ItemsListViewModel 
                                 .clip(CircleShape)
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            MaterialTheme.colors.primary,
-                                            MaterialTheme.colors.secondary,
+                                        colors = if (isSystemInDarkTheme()) {
+                                            listOf(
+                                                MaterialTheme.colors.primary,
+                                                MaterialTheme.colors.secondary,
 //                                            Color(android.graphics.Color.parseColor("#5614B0")),
 //                                            Color(android.graphics.Color.parseColor("#DBD65C"))
-                                        )
+                                            )
+                                        } else {
+                                            listOf(
+                                                Purple200,
+                                                Purple200,
+//                                            Color(android.graphics.Color.parseColor("#5614B0")),
+//                                            Color(android.graphics.Color.parseColor("#DBD65C"))
+                                            )
+
+                                        }
                                     ),
                                     shape = CircleShape
                                 )

@@ -2,6 +2,7 @@ package com.mitm.android.grocerysharedlist.presentation.ui.room_settings.composa
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Card
@@ -14,6 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun CardQR(
+    onClick: (() -> Unit)? = null,
     size: Dp = 150.dp,
     bitmap: ImageBitmap){
     Card(
@@ -24,6 +26,9 @@ fun CardQR(
             bitmap = bitmap,
             contentDescription = "image_qr",
             modifier = Modifier.fillMaxSize()
+                .clickable {
+                    onClick?.invoke()
+                }
         )
     }
 }

@@ -3,13 +3,15 @@ package com.mitm.android.grocerysharedlist.presentation.ui.room_settings
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.mitm.android.grocerysharedlist.core.AppSettings
 import com.mitm.android.grocerysharedlist.domain.repository.RepositoryGrocery
-import com.mitm.android.grocerysharedlist.presentation.ui.items_list.ListEvent
-import com.mitm.android.grocerysharedlist.presentation.ui.items_list.ListStates
 import com.mitm.android.grocerysharedlist.presentation.ui.items_list.composable.InputItemState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,15 +56,75 @@ class RoomSettingsViewModel @Inject constructor(
                 )
             }
 
+            is RoomSettingsEvent.RoomIsNotExist-> {
+                _state.value = roomState.value.copy(
+                    roomIsExist = false,
+                    navigatePopUp = false
+                )
+            }
+
+            is RoomSettingsEvent.SetHomeRoomID-> {
+                viewModelScope.launch {
+                    val def = async { repository.setHomeRoomID() }
+                    def.await()
+
+                    _state.value = roomState.value.copy(
+                        roomID = appSettings.getRoomID() ?: return@launch,
+                        roomIsExist = true,
+                        navigatePopUp = true
+                    )
+
+                    repository.updatePath(_state.value.roomID)
+                }
+            }
+
 
             is RoomSettingsEvent.UpdateRoomID -> {
                 _state.value = roomState.value.copy(
-                    roomID = roomState.value.inputRoomId
+                    loading = true,
                 )
-                repository.updatePath(_state.value.inputRoomId)
+
+                if (roomState.value.inputRoomId.isEmpty()){
+                    _state.value = roomState.value.copy(
+                        roomIsExist = false,
+                        navigatePopUp = false,
+                        loading = false,
+                    )
+                    return
+                }
+
+                viewModelScope.launch {
+                    //check is Room exceed
+                    val isExceedDeferred = async {
+                        repository.checkPathIsExists(roomState.value.inputRoomId)
+                    }
+
+                    val isExceed = isExceedDeferred.await()
+
+                    if (isExceed) {
+                        _state.value = roomState.value.copy(
+                            roomID = roomState.value.inputRoomId,
+                            roomIsExist = isExceed,
+                            navigatePopUp = true
+                        )
+
+                        repository.updatePath(_state.value.inputRoomId)
+                    } else {
+
+                        _state.value = roomState.value.copy(
+                            roomIsExist = isExceed,
+                            navigatePopUp = true
+                        )
+                    }
+
+                    delay(1000L)
+
+                    _state.value = roomState.value.copy(
+                        loading = false,
+                    )
+                }
             }
 
         }
     }
-
 }

@@ -14,15 +14,17 @@ import com.mitm.android.grocerysharedlist.presentation.ui.room_settings.RoomSett
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
-fun Navigation(){
+fun Navigation() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.ItemListScreen.route ){
+    NavHost(navController = navController, startDestination = Screen.ItemListScreen.route) {
 
-        composable(Screen.ItemListScreen.route){
+        composable(
+            Screen.ItemListScreen.route,
+        ) {
             ItemsListScreen(navController = navController)
         }
 
-        composable(Screen.RoomSettingsScreen.route){
+        composable(Screen.RoomSettingsScreen.route) {
             RoomSettingsScreen(navController)
         }
     }

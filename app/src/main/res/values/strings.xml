@@ -4,7 +4,19 @@
 
     <string name="clear_list_msg">List is cleared</string>
     <string name="undo">Undo</string>
-    <string name="room_new_msg">New room is saved</string>
+
+    <string name="room_new_msg">RoomID - this is your unique ID, if you want to share your list with somebody,
+        copy it and send or scan QR and enter a new Room. All changes in the room are synchronized.
+    </string>
+
+    <string name="room_err_msg">Entered RoomID is not exist, check the input.</string>
+
+    <string name="save">Save</string>
+    <string name="snck_msg">Room is updated</string>
+    <string name="error">Room is not changed</string>
+
+    <string name="error_title">Error</string>
+    <string name="info">Info</string>
 
 
 </resources>

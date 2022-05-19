@@ -32,8 +32,7 @@ class MainActivity : ComponentActivity() {
 
         MobileAds.initialize(this) {}
 
-        installSplashScreen().apply {
-        }
+        installSplashScreen().apply {}
 
         analytics = Firebase.analytics
         setContent {

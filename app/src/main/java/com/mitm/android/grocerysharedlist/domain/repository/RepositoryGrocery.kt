@@ -10,6 +10,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.toObject
 import com.mitm.android.grocerysharedlist.core.AppSettings
 import com.mitm.android.grocerysharedlist.core.Constants
+import com.mitm.android.grocerysharedlist.core.Constants.PREF_HOME_ROOM_KEY
 import com.mitm.android.grocerysharedlist.core.Constants.PREF_ROOM_KEY
 import com.mitm.android.grocerysharedlist.core.Constants.ROOT
 import com.mitm.android.grocerysharedlist.core.Constants.TAG
@@ -18,12 +19,10 @@ import com.mitm.android.grocerysharedlist.model.remote.ListFirestore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
 import java.util.*
 import javax.inject.Inject
+import kotlin.coroutines.suspendCoroutine
 
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -45,15 +44,44 @@ class RepositoryGrocery @Inject constructor(
         context.dataStore.edit {
             it[PREF_ROOM_KEY] = this
         }
+        context.dataStore.edit {
+            it[PREF_HOME_ROOM_KEY] = this
+        }
     }
 
-    fun updatePath() {
-        path = remoteDB.collection(ROOT)
+    suspend fun setHomeRoomID(): Boolean {
+        val homeID = context.dataStore.data.first()[PREF_HOME_ROOM_KEY] ?: generateRoomID()
+
+        appSettings.updateRoomID(homeID)
+        context.dataStore.edit {
+            it[PREF_ROOM_KEY] = homeID
+        }
+
+        return true
+    }
+
+    private fun updatePath() {
+        path = remoteDB
+            .collection(ROOT)
             .document(appSettings.getRoomID() ?: "0")
 
         Log.d(Constants.TAG, "path: $path")
     }
 
+
+
+    suspend fun checkPathIsExists(roomId: String): Boolean {
+        return suspendCoroutine { cont ->
+            remoteDB.collection(ROOT)
+                .document(roomId).get().addOnSuccessListener {
+                    cont.resumeWith(Result.success(it.exists()))
+                }.addOnCanceledListener {
+                    cont.resumeWith(Result.success(false))
+                }.addOnFailureListener {
+                    cont.resumeWith(Result.success(false))
+                }
+        }
+    }
 
     @ExperimentalCoroutinesApi
     fun updatePath(roomId: String) {
@@ -75,6 +103,7 @@ class RepositoryGrocery @Inject constructor(
         Log.d(Constants.TAG, "job?.isCompleted\n: $job")
 
         subscribeToRealtimeUpdates()
+
     }
 
 
