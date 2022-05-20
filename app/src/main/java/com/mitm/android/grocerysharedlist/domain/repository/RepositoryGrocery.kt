@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.*
 import java.util.*
 import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.absoluteValue
 
 
 private val Context.dataStore by preferencesDataStore("settings")
@@ -39,7 +40,7 @@ class RepositoryGrocery @Inject constructor(
     private var job: Job? = null
 
 
-    private suspend fun generateRoomID() = Date().hashCode().toString().apply {
+    private suspend fun generateRoomID() = Date().hashCode().absoluteValue.toString().apply {
         appSettings.updateRoomID(this)
         context.dataStore.edit {
             it[PREF_ROOM_KEY] = this
