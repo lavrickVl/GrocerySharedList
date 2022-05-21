@@ -40,6 +40,8 @@ class RepositoryGrocery @Inject constructor(
     private var job: Job? = null
 
 
+    suspend fun checkRoomIsHome() = context.dataStore.data.first()[Constants.PREF_ROOM_KEY] == context.dataStore.data.first()[Constants.PREF_HOME_ROOM_KEY]
+
     private suspend fun generateRoomID() = Date().hashCode().absoluteValue.toString().apply {
         appSettings.updateRoomID(this)
         context.dataStore.edit {
@@ -100,8 +102,8 @@ class RepositoryGrocery @Inject constructor(
         path = remoteDB.collection(ROOT)
             .document(roomId)
 
-        Log.d(Constants.TAG, "path: $path")
-        Log.d(Constants.TAG, "job?.isCompleted\n: $job")
+//        Log.d(Constants.TAG, "path: $path")
+//        Log.d(Constants.TAG, "job?.isCompleted\n: $job")
 
         subscribeToRealtimeUpdates()
 

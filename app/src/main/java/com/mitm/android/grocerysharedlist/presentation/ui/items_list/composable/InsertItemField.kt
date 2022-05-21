@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -65,11 +66,21 @@ fun InsertItemField(
             keyboardActions = keyboardActions,
             trailingIcon = {
                 if (trailListener != null) {
-                    IconButton(onClick = trailListener) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "info"
-                        )
+
+                    if (isHintVisible) {
+                        IconButton(onClick = trailListener) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "info"
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = trailListener) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "clear"
+                            )
+                        }
                     }
                 }
             }

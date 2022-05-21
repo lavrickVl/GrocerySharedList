@@ -22,7 +22,5 @@ class AppSettings @Inject constructor(private val context: Context) {
     }
 
     fun getRoomID() = _roomId
-
-
 }
 

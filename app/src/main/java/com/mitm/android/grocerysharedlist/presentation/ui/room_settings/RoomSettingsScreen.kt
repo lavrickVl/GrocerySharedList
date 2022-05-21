@@ -9,10 +9,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -37,7 +33,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context.CLIPBOARD_SERVICE
 import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -56,6 +55,16 @@ fun RoomSettingsScreen(
 
     val myClipboard = LocalContext.current.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
 
+    var visible by remember { mutableStateOf(false) }
+
+    scope.launch {
+        //checking
+        if (viewModel.checkRoomIsHome().await()) return@launch
+        delay(600L)
+        visible = true
+    }
+
+
     val barcodeEncoder = BarcodeEncoder()
     val bitmap = remember {
         mutableStateOf(
@@ -71,6 +80,10 @@ fun RoomSettingsScreen(
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
+
+            val density = LocalDensity.current
+
+
             TopAppBar() {
                 IconButton(onClick = {
                     navController.popBackStack()
@@ -83,14 +96,31 @@ fun RoomSettingsScreen(
 
                 Spacer(Modifier.weight(1f, true))
 
-                IconButton(onClick = {
-                    viewModel.onEvent(RoomSettingsEvent.SetHomeRoomID)
-                }) {
-                    Icon(
-                        Icons.Filled.Home,
-                        contentDescription = "home_room"
-                    )
+
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = slideInVertically {
+                        // Slide in from 40 dp from the top.
+                        with(density) { -40.dp.roundToPx() }
+                    } + expandVertically(
+                        // Expand from the top.
+                        expandFrom = Alignment.Top
+                    ) + fadeIn(
+                        // Fade in with the initial alpha of 0.3f.
+                        initialAlpha = 0.3f
+                    ),
+                    exit = slideOutVertically() + shrinkVertically() + fadeOut()
+                ) {
+                    IconButton(onClick = {
+                        viewModel.onEvent(RoomSettingsEvent.SetHomeRoomID)
+                    }) {
+                        Icon(
+                            Icons.Filled.Home,
+                            contentDescription = "home_room"
+                        )
+                    }
                 }
+
             }
         }
     ) {
@@ -103,7 +133,7 @@ fun RoomSettingsScreen(
         {
             val keyboardController = LocalSoftwareKeyboardController.current
             val msg = stringResource(id = R.string.room_new_msg)
-            val title = stringResource(id = R.string.room_new_msg)
+            //val title = stringResource(id = R.string.room_new_msg)
 
             val msg_err = stringResource(id = R.string.room_err_msg)
             val title_err = stringResource(id = R.string.error_title)
@@ -118,6 +148,10 @@ fun RoomSettingsScreen(
             Column(
                 modifier = Modifier.weight(1f, false),
             ) {
+                val iconClearShow = remember {
+                    mutableStateOf(false)
+                }
+
                 InsertItemField(
                     modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
                     text = state.value.inputRoomId,
@@ -132,14 +166,23 @@ fun RoomSettingsScreen(
                         onDone = {
                             keyboardController?.hide()
                         }),
-                    isHintVisible = viewModel.roomIdContent.value.isHintVisible,
+                    isHintVisible = iconClearShow.value,//viewModel.roomIdContent.value.isHintVisible,
                     onFocusChange = {
+                        iconClearShow.value = !it.isFocused
                         viewModel.onEvent(RoomSettingsEvent.ChangeContentFocus(it))
                     },
                     trailIcon = true,
-                    trailListener = {
-                        setShowDialog(true)
-                        viewModel.onEvent(RoomSettingsEvent.RoomIsNotExist)
+                    trailListener = if (iconClearShow.value) {
+                        {
+                            setShowDialog(true)
+                            viewModel.onEvent(RoomSettingsEvent.RoomIsNotExist)
+                        }
+                    } else {
+                        {
+                            viewModel.onEvent(RoomSettingsEvent.EditInputRoomID(""))
+                            iconClearShow.value = true
+                            isError.value = false
+                        }
                     },
 
                     isError = isError.value

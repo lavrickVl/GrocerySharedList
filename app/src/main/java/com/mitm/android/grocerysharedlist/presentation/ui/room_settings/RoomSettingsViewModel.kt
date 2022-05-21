@@ -37,6 +37,10 @@ class RoomSettingsViewModel @Inject constructor(
     )
     val roomIdContent: State<InputItemState> = _roomIdContent
 
+    fun checkRoomIsHome() = viewModelScope.async {
+        repository.checkRoomIsHome()
+    }
+
     @ExperimentalCoroutinesApi
     fun onEvent(roomEvents: RoomSettingsEvent) {
 
